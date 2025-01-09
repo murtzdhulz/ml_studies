@@ -1,0 +1,1 @@
+This folder contains notebooks from the `Reasoning with o1` course from deeplearning.ai
