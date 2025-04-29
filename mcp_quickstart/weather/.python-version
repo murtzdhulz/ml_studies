@@ -1,1 +1,2 @@
 3.11
+# The packages are installed under mcp_quickstart .venv -- under `base` conda env.
