@@ -1,3 +1,14 @@
+"""
+This module contains experimental code for testing the CodeRankEmbed model from nomic-ai.
+It demonstrates the model's capabilities in:
+- Embedding code snippets into vector space
+- Finding similar code based on natural language queries
+- Visualizing code embeddings using PCA
+
+This is purely for experimental purposes to understand how the model performs
+on basic code similarity and search tasks (RAG).
+"""
+
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from typing import List, Tuple
@@ -97,4 +108,102 @@ def main():
     experiment.visualize_embeddings(queries)
 
 if __name__ == "__main__":
-    main() 
+    main()
+
+"""
+Below are the results from running the code above. It gets all the code snippets and queries correct:
+Searching for similar code snippets:
+
+Query: Find a function that calculates factorial
+Similarity: 0.4181
+Code:
+def fact(n):
+    if n < 0:
+        raise ValueError
+    return 1 if n == 0 else n * fact(n - 1)
+
+Similarity: 0.3140
+Code:
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+Similarity: 0.0990
+Code:
+def binary_search(arr, target):
+    left, right = 0, len(arr) - 1
+    while left <= right:
+        mid = (left + right) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+    return -1
+
+
+Query: Show me a sorting algorithm
+Similarity: 0.2986
+Code:
+def bubble_sort(arr):
+    n = len(arr)
+    for i in range(n):
+        for j in range(0, n-i-1):
+            if arr[j] > arr[j+1]:
+                arr[j], arr[j+1] = arr[j+1], arr[j]
+
+Similarity: 0.1518
+Code:
+def binary_search(arr, target):
+    left, right = 0, len(arr) - 1
+    while left <= right:
+        mid = (left + right) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+    return -1
+
+Similarity: 0.1152
+Code:
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+
+Query: How to implement binary search?
+Similarity: 0.4766
+Code:
+def binary_search(arr, target):
+    left, right = 0, len(arr) - 1
+    while left <= right:
+        mid = (left + right) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+    return -1
+
+Similarity: 0.2579
+Code:
+def bubble_sort(arr):
+    n = len(arr)
+    for i in range(n):
+        for j in range(0, n-i-1):
+            if arr[j] > arr[j+1]:
+                arr[j], arr[j+1] = arr[j+1], arr[j]
+
+Similarity: 0.2140
+Code:
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+"""
