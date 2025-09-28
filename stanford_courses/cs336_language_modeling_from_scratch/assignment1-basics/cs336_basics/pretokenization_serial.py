@@ -62,7 +62,7 @@ def pretokenize_one_chunk(text_chunk, special_tokens, tokenizer_re):
     return tokenized_text
 
 
-def get_pretokenized_corpus(input_corpus_filepath, special_tokens = None):
+def get_pretokenized_corpus_serial(input_corpus_filepath, special_tokens = None):
     with open(input_corpus_filepath, "rb") as f:
         num_processes = 5
         # Consider the `<|endoftext|>` as a special case and let's use the code provided.
@@ -110,4 +110,4 @@ def get_pretokenized_corpus(input_corpus_filepath, special_tokens = None):
 # Example usage.
 # corpus_filepath = "/Users/murtazad/Desktop/Murtaza/studies/ml_data/cs336_llms_from_scratch/assignment1_basics_data/TinyStoriesV2-GPT4_small.txt"
 corpus_filepath = "/Users/murtazad/Desktop/Murtaza/studies/ml_data/cs336_llms_from_scratch/assignment1_basics_data/TinyStoriesV2-GPT4-valid.txt"
-pretokenized_counter = get_pretokenized_corpus(corpus_filepath, ["<|endoftext|>"])
+pretokenized_counter = get_pretokenized_corpus_serial(corpus_filepath, ["<|endoftext|>"])
