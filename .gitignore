@@ -54,3 +54,6 @@ venv.bak/
 # VSCode
 .vscode/
 **/.vscode/
+
+# Claude Code
+**/.claude/settings.local.json
