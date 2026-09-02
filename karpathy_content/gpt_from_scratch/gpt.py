@@ -3,13 +3,17 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 # hyperparameters
-batch_size = 32 # how many independent sequences will we process in parallel?
-block_size = 8 # what is the maximum context length for predictions?
-max_iters = 3000
-eval_interval = 300
-learning_rate = 1e-2
+batch_size = 64             # how many independent sequences will we process in parallel?
+block_size = 256            # what is the maximum context length for predictions?
+max_iters = 5000
+eval_interval = 500
+learning_rate = 3e-4
 eval_iters = 200
-n_embd = 32
+n_embd = 384
+n_head = 6
+n_layer = 6
+dropout = 0.2
+# ------------
 
 # ------------
 # Setting the device
@@ -69,6 +73,45 @@ def estimate_loss():
     model.train()
     return out
 
+class Head(nn.Module):
+    """One head of self-attention"""
+
+    def __init__(self, head_size):
+        super().__init__()
+        self.key = nn.Linear(n_embd, head_size, bias=False)
+        self.query = nn.Linear(n_embd, head_size, bias=False)
+        self.value = nn.Linear(n_embd, head_size, bias=False)
+
+        # This is for masking. And this is (seq_len, seq_len) because that's what we will get for "Q @ K.T"
+        self.register_buffer("tril", torch.tril(torch.ones(block_size, block_size)))
+
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        # input of size (batch, time-step, channels) -- (B, T, C)
+        # output of size (batch, time-step, head size) -- (B, T, head_size)
+        B, T, C = x.shape
+        
+        q = self.query(x)   # (B, T, head_size)
+        k = self.key(x)     # (B, T, head_size)
+        
+        # Compute attention score ("affinities")
+        wei = q @ k.transpose(-2, -1) * k.shape[-1]**-0.5   # (B, T, hs) @ (B, hs, T) -> (B, T, T) [normalize by sqrt of head_size]
+
+        # We do it this way here because tril has max block_size x block_size allocation in init.
+        # But T could be smaller than block_size. So we are essentially slicing the top left part of tril_full
+        # and taking what we need here to match wei's dimensions.
+        wei = wei.masked_fill(self.tril[:T, :T] == 0, float("-inf"))
+        wei = F.softmax(wei, dim=-1)     # (B, T, T)
+        wei = self.dropout(wei)
+
+        # Perform the weighted aggregation of the values.
+        v = self.value(x)
+        out = wei @ v
+        return out
+
+
+# This will be deleted later once we change this to GPT model.
 # super simple bigram model
 class BigramLanguageModel(nn.Module):
 
