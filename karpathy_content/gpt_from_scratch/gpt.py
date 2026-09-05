@@ -4,12 +4,12 @@ from torch.nn import functional as F
 
 # hyperparameters
 batch_size = 64             # how many independent sequences will we process in parallel?
-block_size = 256            # what is the maximum context length for predictions?
+block_size = 128            # what is the maximum context length for predictions?
 max_iters = 5000
 eval_interval = 500
 learning_rate = 3e-4
 eval_iters = 200
-n_embd = 384
+n_embd = 32
 n_head = 6
 n_layer = 6
 dropout = 0.2
@@ -152,17 +152,26 @@ class Block(nn.Module):
         return x
 
 
-
-# This will be deleted later once we change this to GPT model.
-# super simple bigram model
-class BigramLanguageModel(nn.Module):
+class GPTLanguageModel(nn.Module):
 
     def __init__(self):
         super().__init__()
-        # each token directly reads off the logits for the next token from a lookup table
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
+        self.blocks = nn.Sequential(*[Block(n_embd, n_head) for _ in range(n_layer)])
+        self.ln_f = nn.LayerNorm(n_embd)               # final layernorm
         self.lm_head = nn.Linear(n_embd, vocab_size)
+
+        # better init of weights.
+        self.apply(self._init_weights)
+
+    def _init_weights(self, module):
+        if isinstance(module, nn.Linear):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            if module.bias is not None:
+                torch.nn.init.zeros_(module.bias)
+        elif isinstance(module, nn.Embedding):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
     def forward(self, idx, targets=None):
         B, T = idx.shape
@@ -171,6 +180,8 @@ class BigramLanguageModel(nn.Module):
         tok_emb = self.token_embedding_table(idx) # (B,T,C)
         pos_emd = self.position_embedding_table(torch.arange(T, device=device))   # (T, C)
         x = tok_emb + pos_emd          # (B, T, C)
+        x = self.blocks(x)
+        x = self.ln_f(x)
         logits = self.lm_head(x)   # (B, T, vocab_size)
 
         if targets is None:
@@ -186,8 +197,10 @@ class BigramLanguageModel(nn.Module):
     def generate(self, idx, max_new_tokens):
         # idx is (B, T) array of indices in the current context
         for _ in range(max_new_tokens):
+            # crop idx to the last block_size tokens
+            idx_cond = idx[:, -block_size:]
             # get the predictions
-            logits, loss = self(idx)
+            logits, loss = self(idx_cond)
             # focus only on the last time step
             logits = logits[:, -1, :] # becomes (B, C)
             # apply softmax to get probabilities
@@ -198,8 +211,11 @@ class BigramLanguageModel(nn.Module):
             idx = torch.cat((idx, idx_next), dim=1) # (B, T+1)
         return idx
 
-model = BigramLanguageModel()
+model = GPTLanguageModel()
 m = model.to(device)
+
+# Print the number of parameters in the model
+print(sum(p.numel() for p in m.parameters())/1e6, 'M parameters')
 
 # create a PyTorch optimizer
 optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
